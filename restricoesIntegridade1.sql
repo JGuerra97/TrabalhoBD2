@@ -5,6 +5,7 @@ TABELAS ASSOCIADAS:
 	-projeto (equipe ou categoria)
 	-funcionario (permissao ou equipe)
 	-equipe (lider)
+	-equipes_funcionarios (equipe ou funcionario)
 */
 
 -- verifica alterações em categoria
@@ -13,9 +14,10 @@ CREATE OR REPLACE FUNCTION altera_categoria_function() RETURNS TRIGGER AS $$
 		cursor1 CURSOR (nome_cat VARCHAR(20)) FOR
 			SELECT min(nivel_permissao) AS permissao
 			FROM funcionario
-			JOIN projeto on projeto.equipe_id = projeto.equipe_id
+			JOIN equipes_funcionarios ON funcionario.id = equipes_funcionarios.funcionario_id
+			JOIN projeto ON projeto.equipe_id = equipes_funcionarios.equipe_id
 			WHERE projeto.categoria_nome = nome_cat
-			GROUP BY funcionario.equipe_id;
+			GROUP BY equipes_funcionarios.equipe_id;
 		recebe_cursor RECORD;
 	BEGIN
 		IF NEW.permissao_assoc > OLD.permissao_assoc THEN
@@ -38,8 +40,9 @@ CREATE OR REPLACE FUNCTION altera_ou_insere_projeto_function() RETURNS TRIGGER A
 		cursor1 CURSOR (equipe_proj INTEGER) FOR
 			SELECT min(nivel_permissao) AS permissao
 			FROM funcionario
-			WHERE funcionario.equipe_id = equipe_proj
-			GROUP BY funcionario.equipe_id;
+			JOIN equipes_funcionarios ON equipes_funcionarios.funcionario_id = funcionario.id
+			WHERE equipes_funcionarios.equipe_id = equipe_proj
+			GROUP BY equipes_funcionarios.equipe_id;
 		cursor2 CURSOR (nome_cat VARCHAR(20)) FOR
 			SELECT permissao_assoc
 			FROM categoria
@@ -61,36 +64,38 @@ CREATE TRIGGER altera_ou_insere_projeto BEFORE UPDATE OR INSERT ON projeto
 	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_projeto_function();
 	
 --verifica alterações em funcionarios
-CREATE OR REPLACE FUNCTION altera_ou_insere_funcionario_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION altera_funcionario_function() RETURNS TRIGGER AS $$
 	DECLARE
-		cursor1 CURSOR (equipe_proj INTEGER) FOR
+		cursor1 CURSOR (id_funcionario INTEGER) FOR
 			SELECT max(categoria.permissao_assoc) AS permissao
-			FROM projeto JOIN categoria ON projeto.categoria_nome = categoria.nome
-			WHERE projeto.equipe_id = equipe_proj
+			FROM projeto
+			JOIN categoria ON projeto.categoria_nome = categoria.nome
+			JOIN equipes_funcionarios ON projeto.equipe_id = equipes_funcionarios.equipe_id
+			WHERE equipes_funcionarios.funcionario_id = id_funcionario
 			GROUP BY projeto.equipe_id;
-		maxima_permissao_equipe RECORD;
+		maxima_permissao_equipes RECORD;
 	BEGIN
-		OPEN cursor1(NEW.equipe_id);
-		FETCH cursor1 INTO maxima_permissao_equipe;
-		IF maxima_permissao_equipe.permissao > NEW.nivel_permissao THEN
-			RAISE EXCEPTION 'A equipe deste funcionário contém projetos cuja permissao necessária é maior que a do funcionario.';
+		OPEN cursor1(NEW.id);
+		FETCH cursor1 INTO maxima_permissao_equipes;
+		IF maxima_permissao_equipes.permissao > NEW.nivel_permissao THEN
+			RAISE EXCEPTION 'Ao menos uma equipe deste funcionário contém projetos cuja permissao necessária é maior que a do funcionario.';
 		END IF;
 		RETURN NEW;
 	END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER altera_ou_insere_funcionario BEFORE UPDATE OR INSERT on funcionario
-	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_funcionario_function();
+CREATE TRIGGER altera_funcionario BEFORE UPDATE ON funcionario
+	FOR EACH ROW EXECUTE PROCEDURE altera_funcionario_function();
 
 --verifica alterações em equipe
 CREATE OR REPLACE FUNCTION altera_equipe_function() RETURNS TRIGGER AS $$
 	DECLARE
-		cursor1 CURSOR (id_equipe INTEGER) FOR --permissao mínima para participar da equipe
+		cursor1 CURSOR (id_equipe INTEGER) FOR
 			SELECT max(categoria.permissao_assoc) AS permissao
 			FROM projeto JOIN categoria ON projeto.categoria_nome = categoria.nome
 			WHERE projeto.equipe_id = id_equipe
 			GROUP BY projeto.equipe_id;
-		cursor2 CURSOR (id_funcionario INTEGER) FOR --permissao de um funcionario
+		cursor2 CURSOR (id_funcionario INTEGER) FOR
 			SELECT nivel_permissao
 			FROM funcionario
 			WHERE funcionario.id = id_funcionario;
@@ -109,3 +114,31 @@ CREATE OR REPLACE FUNCTION altera_equipe_function() RETURNS TRIGGER AS $$
 $$ LANGUAGE plpgsql;
 CREATE TRIGGER altera_equipe BEFORE UPDATE ON equipe
 	FOR EACH ROW EXECUTE PROCEDURE altera_equipe_function();
+	
+--verifica alterações em equipes_funcionarios
+CREATE OR REPLACE FUNCTION altera_ou_insere_equipes_funcionarios_function() RETURNS TRIGGER AS $$
+	DECLARE
+		cursor1 CURSOR (id_equipe INTEGER) FOR
+			SELECT max(categoria.permissao_assoc) AS permissao
+			FROM projeto JOIN categoria ON projeto.categoria_nome = categoria.nome
+			WHERE projeto.equipe_id = id_equipe
+			GROUP BY projeto.equipe_id;
+		cursor2 CURSOR (id_funcionario INTEGER) FOR
+			SELECT nivel_permissao
+			FROM funcionario
+			WHERE funcionario.id = id_funcionario;
+		permissao_equipe RECORD;
+		permissao_funcionario RECORD;
+	BEGIN
+		OPEN cursor1(NEW.equipe_id);
+		FETCH cursor1 INTO permissao_equipe;
+		OPEN cursor2(NEW.funcionario_id);
+		FETCH cursor2 INTO permissao_funcionario;
+		IF permissao_funcionario < permissao_equipe THEN
+			RAISE EXCEPTION 'O funcionário não tem permissão para os projetos da equipe.';
+		END IF;
+		RETURN NEW;
+	END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER altera_ou_insere_equipes_funcionarios BEFORE UPDATE OR INSERT ON equipes_funcionarios
+	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_equipes_funcionarios_function();
