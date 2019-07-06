@@ -18,14 +18,13 @@ CREATE OR REPLACE FUNCTION altera_categoria_restricao_um_function() RETURNS TRIG
 			JOIN projeto ON projeto.equipe_id = equipes_funcionarios.equipe_id
 			WHERE projeto.categoria_nome = NEW.nome
 			GROUP BY equipes_funcionarios.equipe_id;
-		recebe_cursor RECORD;
 	BEGIN
 		IF NEW.permissao_assoc > OLD.permissao_assoc THEN
-			OPEN cursor1Restricao1;
-			FETCH cursor1Restricao1 INTO recebe_cursor;
-			IF recebe_cursor.permissao < NEW.permissao_assoc THEN
-				RAISE EXCEPTION 'A permissão da equipe associada a um projeto desta categoria não é compatível.'; 
-			END IF;
+			FOR recebe_cursor IN cursor1Restricao1 LOOP
+				IF recebe_cursor.permissao < NEW.permissao_assoc THEN
+					RAISE EXCEPTION 'A permissão de uma equipe associada a um projeto desta categoria não é compatível.'; 
+				END IF;
+			END LOOP;
 		END IF;
 		RETURN NEW;
 	END;
