@@ -9,7 +9,7 @@ TABELAS ASSOCIADAS:
 */
 
 -- verifica alterações em categoria
-CREATE OR REPLACE FUNCTION altera_categoria_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION altera_categoria_restricao_um_function() RETURNS TRIGGER AS $$
 	DECLARE
 		cursor1 CURSOR (nome_cat VARCHAR(20)) FOR
 			SELECT min(nivel_permissao) AS permissao
@@ -30,12 +30,12 @@ CREATE OR REPLACE FUNCTION altera_categoria_function() RETURNS TRIGGER AS $$
 		RETURN NEW;
 	END;
 $$ LANGUAGE plpgsql;
-CREATE TRIGGER altera_categoria BEFORE UPDATE ON categoria
-	FOR EACH ROW EXECUTE PROCEDURE altera_categoria_function();
+CREATE TRIGGER altera_categoria_restricao_um BEFORE UPDATE ON categoria
+	FOR EACH ROW EXECUTE PROCEDURE altera_categoria_restricao_um_function();
 
 
 -- verifica alterações em projeto
-CREATE OR REPLACE FUNCTION altera_ou_insere_projeto_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION altera_ou_insere_projeto_restricao_um_function() RETURNS TRIGGER AS $$
 	DECLARE
 		cursor1 CURSOR (equipe_proj INTEGER) FOR
 			SELECT min(nivel_permissao) AS permissao
@@ -60,11 +60,11 @@ CREATE OR REPLACE FUNCTION altera_ou_insere_projeto_function() RETURNS TRIGGER A
 		RETURN NEW;
 	END;
 $$ LANGUAGE plpgsql;
-CREATE TRIGGER altera_ou_insere_projeto BEFORE UPDATE OR INSERT ON projeto
-	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_projeto_function();
+CREATE TRIGGER altera_ou_insere_projeto_restricao_um BEFORE UPDATE OR INSERT ON projeto
+	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_projeto_restricao_um_function();
 	
 --verifica alterações em funcionarios
-CREATE OR REPLACE FUNCTION altera_funcionario_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION altera_funcionario_restricao_um_function() RETURNS TRIGGER AS $$
 	DECLARE
 		cursor1 CURSOR (id_funcionario INTEGER) FOR
 			SELECT max(categoria.permissao_assoc) AS permissao
@@ -84,11 +84,11 @@ CREATE OR REPLACE FUNCTION altera_funcionario_function() RETURNS TRIGGER AS $$
 	END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER altera_funcionario BEFORE UPDATE ON funcionario
-	FOR EACH ROW EXECUTE PROCEDURE altera_funcionario_function();
+CREATE TRIGGER altera_funcionario_restricao_um BEFORE UPDATE ON funcionario
+	FOR EACH ROW EXECUTE PROCEDURE altera_funcionario_restricao_um_function();
 
 --verifica alterações em equipe
-CREATE OR REPLACE FUNCTION altera_equipe_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION altera_equipe_restricao_um_function() RETURNS TRIGGER AS $$
 	DECLARE
 		cursor1 CURSOR (id_equipe INTEGER) FOR
 			SELECT max(categoria.permissao_assoc) AS permissao
@@ -112,11 +112,11 @@ CREATE OR REPLACE FUNCTION altera_equipe_function() RETURNS TRIGGER AS $$
 		RETURN NEW;
 	END;
 $$ LANGUAGE plpgsql;
-CREATE TRIGGER altera_equipe BEFORE UPDATE ON equipe
-	FOR EACH ROW EXECUTE PROCEDURE altera_equipe_function();
+CREATE TRIGGER altera_equipe_restricao_um BEFORE UPDATE ON equipe
+	FOR EACH ROW EXECUTE PROCEDURE altera_equipe_restricao_um_function();
 	
 --verifica alterações em equipes_funcionarios
-CREATE OR REPLACE FUNCTION altera_ou_insere_equipes_funcionarios_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION altera_ou_insere_equipes_funcionarios_restricao_um_function() RETURNS TRIGGER AS $$
 	DECLARE
 		cursor1 CURSOR (id_equipe INTEGER) FOR
 			SELECT max(categoria.permissao_assoc) AS permissao
@@ -140,5 +140,5 @@ CREATE OR REPLACE FUNCTION altera_ou_insere_equipes_funcionarios_function() RETU
 		RETURN NEW;
 	END;
 $$ LANGUAGE plpgsql;
-CREATE TRIGGER altera_ou_insere_equipes_funcionarios BEFORE UPDATE OR INSERT ON equipes_funcionarios
-	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_equipes_funcionarios_function();
+CREATE TRIGGER altera_ou_insere_equipes_funcionarios_restricao_um BEFORE UPDATE OR INSERT ON equipes_funcionarios
+	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_equipes_funcionarios_restricao_um_function();
