@@ -1,0 +1,4 @@
+/*
+REGRA: 
+TABELAS ASSOCIADAS:
+*/
