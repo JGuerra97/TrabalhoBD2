@@ -1,26 +1,36 @@
 /*
-REGRA: Uma equipe não pode pegar mais de um projeto cuja permissao associada à categoria seja igual à permissão 
-		da equipe (que é a menor permissão entre os funcionários da equipe).
+REGRA: A soma das permissões dos projetos de uma equipe não deve ser maior do que metade da soma das permissões dos membros da equipe.
 TABELAS ASSOCIADAS:
 	-categoria (permissao_assoc)
 	-projeto (categoria ou equipe)
-	-equipe (lider)
 	-funcionario (permissao)
 	-equipes_funcionarios (equipe ou funcionario)
 */
 
-CREATE OR REPLACE FUNCTION verifica_se_equipe_ja_possui_projeto_no_limite_da_permissao(id_equipe INTEGER, permissao_equipe INTEGER)
-RETURNS INTEGER AS $$
+CREATE OR REPLACE FUNCTION verifica_somatorio_das_permissoes(id_equipe INTEGER)
+RETURNS boolean AS $$
 	DECLARE
-		quantidade_projetos_limite_permissao INTEGER;
+		somatorio_permissoes_projetos INTEGER;
+		somatorio_permissao_equipe INTEGER;
 	BEGIN
-		SELECT count(*)
+		IF coalesce(id_equipe, -1) = -1 THEN --se o id_equipe é nulo, não existe equipe para ter projetos
+			RETURN TRUE;
+		END IF;
+		SELECT sum(nivel_permissao)
+			FROM funcionario
+			JOIN equipes_funcionarios ON funcionario.id = equipes_funcionarios.funcionario_id
+			WHERE equipes_funcionarios.equipe_id = id_equipe
+			GROUP BY equipes_funcionarios.equipe_id
+			INTO somatorio_permissao_equipe; --recupera a soma das permissoes da equipe
+		SELECT sum(categoria.permissao_assoc)
 			FROM projeto
 			JOIN categoria ON projeto.categoria_nome = categoria.nome
-			WHERE projeto.equipe_id = id_equipe AND
-			categoria.permissao_assoc = permissao_equipe
-			INTO quantidade_projetos_limite_permissao;
-		RETURN quantidade_projetos_limite_permissao;
+			WHERE projeto.equipe_id = id_equipe
+			INTO somatorio_permissoes_projetos; --recupera a quantidade de projetos associados a essa equipe
+		IF somatorio_permissoes_projetos <= (somatorio_permissao_equipe/2) THEN
+			RETURN TRUE;
+		END IF;
+		RETURN FALSE;
 	END;
 $$ LANGUAGE plpgsql;
 
@@ -28,20 +38,54 @@ $$ LANGUAGE plpgsql;
 --verifica alteração em categoria
 CREATE OR REPLACE FUNCTION altera_categoria_restricao_tres_function() RETURNS TRIGGER AS $$
 	DECLARE
-		cursor1Restricao3 CURSOR FOR
-			SELECT equipes_funcionarios.equipe_id, min(nivel_permissao) AS permissao
-			FROM funcionario
-			JOIN equipes_funcionarios ON funcionario.id = equipes_funcionarios.funcionario_id
-			JOIN projeto ON projeto.equipe_id = equipes_funcionarios.equipe_id
-			WHERE projeto.categoria_nome = NEW.nome
-			GROUP BY equipes_funcionarios.equipe_id;
+		cursor1Restricao3 CURSOR FOR --recupera todas as equipes com projetos nesta categoria
+			SELECT equipe.id
+			FROM equipe
+			JOIN projeto ON projeto.equipe_id = equipe.id
+			JOIN categoria ON projeto.categoria_nome = categoria.nome
+			WHERE categoria.nome = NEW.nome;
 	BEGIN
 		IF NEW.permissao_assoc <> OLD.permissao_assoc THEN
-			FOR cursor_linha IN cursor1Restricao3 LOOP
-				IF cursor_linha.permissao <> OLD.permissao_assoc AND cursor_linha.permissao = NEW.permissao_assoc THEN
-					IF verifica_se_equipe_ja_possui_projeto_no_limite_da_permissao(cursor_linha.equipe_id, cursor_linha.permissao) <> 0 THEN
-						RAISE EXCEPTION 'Uma equipe só pode ter um projeto cuja permissão associada a sua categoria seja igual à permissão da equipe.'; 
-					END IF;
+			FOR equipe_linha IN cursor1Restricao3 LOOP
+				IF NOT verifica_somatorio_das_permissoes(equipe_linha.id) THEN
+					RAISE EXCEPTION 'Ao menos uma equipe tem ao menos um projeto desta categoria e não tem permissão suficiente para manter esta atualização';
+				END IF;
+			END LOOP;
+		END IF;
+		RETURN NEW;
+	END;
+$$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS altera_categoria_restricao_tres ON categoria;
+CREATE TRIGGER altera_categoria_restricao_tres AFTER UPDATE ON categoria
+	FOR EACH ROW EXECUTE PROCEDURE altera_categoria_restricao_tres_function();
+	
+	
+--verifica inserção ou alteração em projeto
+CREATE OR REPLACE FUNCTION altera_ou_insere_projeto_restricao_tres_function() RETURNS TRIGGER AS $$
+	BEGIN
+		IF NOT verifica_somatorio_das_permissoes(NEW.equipe_id) THEN
+			RAISE EXCEPTION 'A equipe não tem permissão suficiente para assumir este projeto.';
+		END IF;
+		RETURN NEW;
+	END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS altera_ou_insere_projeto_restricao_treS ON projeto;
+CREATE TRIGGER altera_ou_insere_projeto_restricao_tres AFTER UPDATE OR INSERT ON projeto
+	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_projeto_restricao_tres_function();
+	
+--verifica alteração em funcionario
+CREATE OR REPLACE FUNCTION altera_funcionario_restricao_tres_function() RETURNS TRIGGER AS $$
+	DECLARE
+		cursor1Restricao3 CURSOR FOR --pega todas as equipes de um funcionário
+			SELECT equipes_funcionarios.equipe_id
+				FROM equipes_funcionarios
+				WHERE equipes_funcionarios.funcionario_id = NEW.id;
+	BEGIN
+		IF NEW.nivel_permissao < OLD.nivel_permissao THEN
+			FOR id_equipe IN cursor1Restricao3 LOOP
+				IF NOT verifica_somatorio_das_permissoes(id_equipe) THEN
+					RAISE EXCEPTION 'Alguma das equipes deste funcionario não terá permissão suficiente para os projetos que gerencia.';
 				END IF;
 			END LOOP;
 		END IF;
@@ -49,36 +93,21 @@ CREATE OR REPLACE FUNCTION altera_categoria_restricao_tres_function() RETURNS TR
 	END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS altera_categoria_restricao_tres ON categoria;
-CREATE TRIGGER altera_categoria_restricao_tres BEFORE UPDATE ON categoria
-	FOR EACH ROW EXECUTE PROCEDURE altera_categoria_restricao_tres_function();
+DROP TRIGGER IF EXISTS altera_funcionario_restricao_tres ON funcionario;
+CREATE TRIGGER altera_funcionario_restricao_tres AFTER UPDATE ON funcionario
+	FOR EACH ROW EXECUTE PROCEDURE altera_funcionario_restricao_tres_function();
 	
-
---verifica alteração em projeto
-CREATE OR REPLACE FUNCTION altera_ou_insere_projeto_restricao_tres_function() RETURNS TRIGGER AS $$
-	DECLARE
-		permissao_equipe INTEGER;
-		permissao_categoria INTEGER;
-	BEGIN
-		SELECT min(nivel_permissao)
-			FROM funcionario
-			JOIN equipes_funcionarios ON equipes_funcionarios.funcionario_id = funcionario.id
-			WHERE equipes_funcionarios.equipe_id = NEW.equipe_id
-			INTO permissao_equipe;
-		SELECT permissao_assoc
-			FROM categoria
-			WHERE categoria.nome = NEW.categoria_nome
-			INTO permissao_categoria;
-		IF permissao_categoria = permissao_equipe AND verifica_se_equipe_ja_possui_projeto_no_limite_da_permissao(NEW.equipe_id, permissao_equipe) <> 0 THEN
-			RAISE EXCEPTION 'A equipe associada a esse projeto já tem um projeto com sua permissão máxima.'; 
+	
+--verifica alteração ou inserção em equipes_funcionarios
+CREATE OR REPLACE FUNCTION altera_ou_insere_equipes_funcionarios_restricao_tres_function() RETURNS TRIGGER AS $$
+	BEGIN 
+		IF NOT verifica_somatorio_das_permissoes(OLD.equipe_id) THEN
+			RAISE EXCEPTION 'A equipe não terá perimssão suficiente para manter os projetos que gerencia.';
 		END IF;
 		RETURN NEW;
 	END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS altera_ou_insere_projeto_restricao_tres ON projeto;
-CREATE TRIGGER altera_ou_insere_projeto_restricao_tres BEFORE UPDATE OR INSERT ON projeto
-	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_projeto_restricao_tres_function();
-
-
---verifica alteração em equipe
+DROP TRIGGER IF EXISTS altera_ou_insere_equipes_funcionarios_restricao_tres ON equipes_funcionarios;
+CREATE TRIGGER altera_ou_insere_equipes_funcionarios_restricao_tres AFTER UPDATE ON equipes_funcionarios
+	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_equipes_funcionarios_restricao_tres_function();
