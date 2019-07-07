@@ -55,6 +55,7 @@ CREATE OR REPLACE FUNCTION altera_categoria_restricao_tres_function() RETURNS TR
 		RETURN NEW;
 	END;
 $$ LANGUAGE plpgsql;
+
 DROP TRIGGER IF EXISTS altera_categoria_restricao_tres ON categoria;
 CREATE TRIGGER altera_categoria_restricao_tres AFTER UPDATE ON categoria
 	FOR EACH ROW EXECUTE PROCEDURE altera_categoria_restricao_tres_function();
@@ -79,8 +80,8 @@ CREATE OR REPLACE FUNCTION altera_funcionario_restricao_tres_function() RETURNS 
 	DECLARE
 		cursor1Restricao3 CURSOR FOR --pega todas as equipes de um funcionário
 			SELECT equipes_funcionarios.equipe_id
-				FROM equipes_funcionarios
-				WHERE equipes_funcionarios.funcionario_id = NEW.id;
+			FROM equipes_funcionarios
+			WHERE equipes_funcionarios.funcionario_id = NEW.id;
 	BEGIN
 		IF NEW.nivel_permissao < OLD.nivel_permissao THEN
 			FOR id_equipe IN cursor1Restricao3 LOOP
