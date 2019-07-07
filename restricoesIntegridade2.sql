@@ -58,6 +58,7 @@ CREATE OR REPLACE FUNCTION altera_funcionario_restricao_dois_function() RETURNS 
 	END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS altera_funcionario_restricao_dois ON funcionario;
 CREATE TRIGGER altera_funcionario_restricao_dois BEFORE UPDATE ON funcionario
 	FOR EACH ROW EXECUTE PROCEDURE altera_funcionario_restricao_dois_function();
 	
@@ -72,12 +73,13 @@ CREATE OR REPLACE FUNCTION altera_equipe_restricao_dois_function() RETURNS TRIGG
 			WHERE funcionario.id = NEW.lider_id
 			INTO permissao_lider_equipe;
 		IF NOT verifica_situacao_funcionario_equipe(NEW.lider_id, permissao_lider_equipe, NEW.id) THEN
-			RAISE EXCEPTION 'Todo lider de equipe deve ter permissao superior aos demais funcionarios da equipe que lidera.';
+			RAISE EXCEPTION 'O lider não tem permissão superior a todos os funcionários desta equipe.';
 		END IF;
 		RETURN NEW;	
 	END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS altera_equipe_restricao_dois ON equipe;
 CREATE TRIGGER altera_equipe_restricao_dois AFTER UPDATE ON equipe
 	FOR EACH ROW EXECUTE PROCEDURE altera_equipe_restricao_dois_function();
 
@@ -92,12 +94,13 @@ CREATE OR REPLACE FUNCTION altera_equipes_funcionarios_restricao_dois_function()
 			WHERE funcionario.id = NEW.funcionario_id
 			INTO permissao_funcionario;
 		IF NOT verifica_situacao_funcionario_equipe(NEW.funcionario_id, permissao_funcionario, NEW.equipe_id) THEN
-			RAISE EXCEPTION 'Todo lider de equipe deve ter permissao superior aos demais funcionarios da equipe que lidera.';
+			RAISE EXCEPTION 'O funcionário da equipe não deve ter permissão superior ao lider da equipe.';
 		END IF;
 		RETURN NEW;	
 	END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS altera_equipes_funcionarios_restricao_dois ON equipes_funcionarios;
 CREATE TRIGGER altera_equipes_funcionarios_restricao_dois BEFORE UPDATE OR INSERT ON equipes_funcionarios
 	FOR EACH ROW EXECUTE PROCEDURE altera_equipes_funcionarios_restricao_dois_function();
 	
