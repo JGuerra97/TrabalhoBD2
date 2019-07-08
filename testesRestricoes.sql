@@ -53,3 +53,11 @@ UPDATE funcionario SET nivel_permissao = 5 WHERE id = 4;
 -- Alteração ou remoção em equipes_funcionarios
 UPDATE equipes_funcionarios SET funcionario_id = 5 WHERE equipe_id = 3 AND funcionario_id = 4;
 DELETE FROM equipes_funcionarios WHERE funcionario_id = 2 AND equipe_id = 2;
+
+
+-------------------- FUNÇÃO 1 -------------------------------
+SELECT * FROM sugestoes nova_equipe_projeto(3, 3);
+
+
+-------------------- FUNÇÃO 2 -------------------------------
+SELECT * FROM relatorio_funcionario_equipe();

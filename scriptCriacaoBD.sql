@@ -3,8 +3,8 @@ CREATE TABLE funcionario(
 	id INTEGER NOT NULL,
 	nome VARCHAR(30),
 	nivel_permissao INTEGER DEFAULT 1,
-	CONSTRAINT funcionario_pk PRIMARY KEY(id)
-	CONSTRAINT funcionario_unique_nome UNIQUE (nome);
+	CONSTRAINT funcionario_pk PRIMARY KEY(id),
+	CONSTRAINT funcionario_unique_nome UNIQUE (nome)
 );
 
 DROP TABLE IF EXISTS equipe CASCADE;
