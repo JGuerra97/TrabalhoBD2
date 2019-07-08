@@ -51,5 +51,6 @@ UPDATE projeto SET categoria_nome = 'Confidencial' WHERE id = 3;
 -- Diminuição no nível de permissão de um funcionário
 UPDATE funcionario SET nivel_permissao = 5 WHERE id = 4;
 
--- Alteração em equipes_funcionarios
+-- Alteração ou remoção em equipes_funcionarios
 UPDATE equipes_funcionarios SET funcionario_id = 5 WHERE equipe_id = 2 AND funcionario_id = 2;
+DELETE FROM equipes_funcionarios WHERE funcionario_id = 2 AND equipe_id = 2;

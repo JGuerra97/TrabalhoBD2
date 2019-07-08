@@ -100,7 +100,7 @@ CREATE TRIGGER altera_funcionario_restricao_tres AFTER UPDATE ON funcionario
 	
 	
 --verifica alteração ou inserção em equipes_funcionarios
-CREATE OR REPLACE FUNCTION altera_ou_insere_equipes_funcionarios_restricao_tres_function() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION altera_ou_remove_equipes_funcionarios_restricao_tres_function() RETURNS TRIGGER AS $$
 	BEGIN 
 		IF NOT verifica_somatorio_das_permissoes(OLD.equipe_id) THEN
 			RAISE EXCEPTION 'A equipe não terá perimssão suficiente para manter os projetos que gerencia.';
@@ -109,6 +109,6 @@ CREATE OR REPLACE FUNCTION altera_ou_insere_equipes_funcionarios_restricao_tres_
 	END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS altera_ou_insere_equipes_funcionarios_restricao_tres ON equipes_funcionarios;
-CREATE TRIGGER altera_ou_insere_equipes_funcionarios_restricao_tres AFTER UPDATE ON equipes_funcionarios
-	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_equipes_funcionarios_restricao_tres_function();
+DROP TRIGGER IF EXISTS altera_ou_remove_equipes_funcionarios_restricao_tres ON equipes_funcionarios;
+CREATE TRIGGER altera_ou_remove_equipes_funcionarios_restricao_tres AFTER UPDATE OR DELETE ON equipes_funcionarios
+	FOR EACH ROW EXECUTE PROCEDURE altera_ou_remove_equipes_funcionarios_restricao_tres_function();
