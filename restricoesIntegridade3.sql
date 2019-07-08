@@ -110,5 +110,5 @@ CREATE OR REPLACE FUNCTION altera_ou_insere_equipes_funcionarios_restricao_tres_
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS altera_ou_insere_equipes_funcionarios_restricao_tres ON equipes_funcionarios;
-CREATE TRIGGER altera_ou_insere_equipes_funcionarios_restricao_tres AFTER UPDATE ON equipes_funcionarios
+CREATE TRIGGER altera_ou_insere_equipes_funcionarios_restricao_tres AFTER UPDATE OR DELETE ON equipes_funcionarios
 	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_equipes_funcionarios_restricao_tres_function();
