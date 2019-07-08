@@ -58,7 +58,7 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS altera_categoria_restricao_tres ON categoria;
 CREATE TRIGGER altera_categoria_restricao_tres AFTER UPDATE ON categoria
-	FOR EACH ROW EXECUTE PROCEDURE altera_categoria_restricao_tres_function();
+	FOR EACH STATEMENT EXECUTE PROCEDURE altera_categoria_restricao_tres_function();
 	
 	
 --verifica inserção ou alteração em projeto
@@ -73,7 +73,7 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS altera_ou_insere_projeto_restricao_tres ON projeto;
 CREATE TRIGGER altera_ou_insere_projeto_restricao_tres AFTER UPDATE OR INSERT ON projeto
-	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_projeto_restricao_tres_function();
+	FOR EACH STATEMENT EXECUTE PROCEDURE altera_ou_insere_projeto_restricao_tres_function();
 	
 --verifica alteração em funcionario
 CREATE OR REPLACE FUNCTION altera_funcionario_restricao_tres_function() RETURNS TRIGGER AS $$
@@ -96,7 +96,7 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS altera_funcionario_restricao_tres ON funcionario;
 CREATE TRIGGER altera_funcionario_restricao_tres AFTER UPDATE ON funcionario
-	FOR EACH ROW EXECUTE PROCEDURE altera_funcionario_restricao_tres_function();
+	FOR EACH STATEMENT EXECUTE PROCEDURE altera_funcionario_restricao_tres_function();
 	
 	
 --verifica alteração ou inserção em equipes_funcionarios
@@ -111,4 +111,4 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS altera_ou_remove_equipes_funcionarios_restricao_tres ON equipes_funcionarios;
 CREATE TRIGGER altera_ou_remove_equipes_funcionarios_restricao_tres AFTER UPDATE OR DELETE ON equipes_funcionarios
-	FOR EACH ROW EXECUTE PROCEDURE altera_ou_remove_equipes_funcionarios_restricao_tres_function();
+	FOR EACH STATEMENT EXECUTE PROCEDURE altera_ou_remove_equipes_funcionarios_restricao_tres_function();
