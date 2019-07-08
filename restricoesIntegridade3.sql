@@ -71,7 +71,7 @@ CREATE OR REPLACE FUNCTION altera_ou_insere_projeto_restricao_tres_function() RE
 	END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS altera_ou_insere_projeto_restricao_treS ON projeto;
+DROP TRIGGER IF EXISTS altera_ou_insere_projeto_restricao_tres ON projeto;
 CREATE TRIGGER altera_ou_insere_projeto_restricao_tres AFTER UPDATE OR INSERT ON projeto
 	FOR EACH ROW EXECUTE PROCEDURE altera_ou_insere_projeto_restricao_tres_function();
 	
@@ -85,7 +85,7 @@ CREATE OR REPLACE FUNCTION altera_funcionario_restricao_tres_function() RETURNS 
 	BEGIN
 		IF NEW.nivel_permissao < OLD.nivel_permissao THEN
 			FOR id_equipe IN cursor1Restricao3 LOOP
-				IF NOT verifica_somatorio_das_permissoes(id_equipe) THEN
+				IF NOT verifica_somatorio_das_permissoes(id_equipe.equipe_id) THEN
 					RAISE EXCEPTION 'Alguma das equipes deste funcionario não terá permissão suficiente para os projetos que gerencia.';
 				END IF;
 			END LOOP;

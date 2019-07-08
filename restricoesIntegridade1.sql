@@ -77,7 +77,7 @@ CREATE OR REPLACE FUNCTION altera_funcionario_restricao_um_function() RETURNS TR
 			IF maxima_permissao_equipes.permissaoNecessaria > NEW.nivel_permissao THEN
 				RAISE EXCEPTION 'Ao menos uma equipe deste funcionário contém projetos cuja permissao necessária é maior que a do funcionario.';
 			END IF;
-		END FOR;
+		END LOOP;
 		RETURN NEW;
 	END;
 $$ LANGUAGE plpgsql;
@@ -98,7 +98,7 @@ CREATE OR REPLACE FUNCTION altera_equipe_restricao_um_function() RETURNS TRIGGER
 			INTO permissao_equipe;
 		SELECT nivel_permissao
 			FROM funcionario
-			WHERE funcionario.id = NEW.lider_id;
+			WHERE funcionario.id = NEW.lider_id
 			INTO permissao_lider;
 		IF permissao_lider < permissao_equipe THEN
 			RAISE EXCEPTION 'O líder não tem permissão para participar dos projetos desta equipe.';

@@ -42,12 +42,3 @@ CREATE TABLE projeto(
 	CONSTRAINT projeto_categoria_fk FOREIGN KEY (categoria_nome) REFERENCES categoria(nome) ON DELETE RESTRICT ON UPDATE CASCADE,
 	CONSTRAINT projeto_equipe_fk FOREIGN KEY (equipe_id) REFERENCES equipe(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
-
-
---CASOS DE EXEMPLO PARA OS TESTES
-INSERT INTO funcionario (id, nome, nivel_permissao) VALUES (1, 'Rodolfo', 4),(2, 'Rosislene', 3);
-INSERT INTO equipe (id, lider_id) VALUES (1, 1);
-INSERT INTO equipes_funcionarios VALUES (1, 1), (2, 1);
-INSERT INTO categoria (nome, permissao_assoc) VALUES ('Administrativo', 2);
-INSERT INTO projeto (id, categoria_nome, equipe_id) VALUES (1, 'Administrativo', 1);
-SELECT * FROM funcionario, equipe, categoria, projeto;
