@@ -1,10 +1,10 @@
 --CASOS DE EXEMPLO PARA OS TESTES
 
-INSERT INTO funcionario (id, nome, nivel_permissao) VALUES (1, 'Rodolfo', 4),(2, 'Rosislene', 3),(3, 'Mario', 2),(4, 'Andreia', 6),(5, 'Leonardo', 1);
+INSERT INTO funcionario (id, nome, nivel_permissao) VALUES (1, 'Rodolfo', 4),(2, 'Rosislene', 3),(3, 'Mario', 2),(4, 'Andreia', 6),(5, 'Leonardo', 3);
 INSERT INTO equipe (id, lider_id) VALUES (1, 1),(2, 1),(3, 4);
 INSERT INTO equipes_funcionarios VALUES (1, 1),(2, 1),(3, 1),(1, 2),(2, 2),(4, 3);
-INSERT INTO categoria (nome, permissao_assoc) VALUES ('Administrativo', 2),('Vendas', 3),('Confidencial', 6);
-INSERT INTO projeto (id, categoria_nome, equipe_id) VALUES (1, 'Administrativo', 1),(2, 'Vendas', 2),(3, 'Vendas', 3);
+INSERT INTO categoria (nome, permissao_assoc) VALUES ('Administrativo', 2),('Vendas', 3),('Confidencial', 6),('Marketing', 3);
+INSERT INTO projeto (id, categoria_nome, equipe_id) VALUES (1, 'Administrativo', 1),(2, 'Vendas', 2),(3, 'Marketing', 3);
 SELECT * FROM funcionario, equipe, categoria, projeto;
 
 -------- TESTES RESTRIÇÃO 1 --------
@@ -30,7 +30,6 @@ UPDATE equipes_funcionarios SET funcionario_id = 3 WHERE funcionario_id = 4;
 
 -- Diminuição do nível de permissão de um líder ou aumento do nível de permissão de um funcionário
 UPDATE funcionario SET nivel_permissao = 2 WHERE id = 1;
-UPDATE funcionario SET nivel_permissao = 5 WHERE id = 2;
 
 -- Alteração do líder da equipe
 UPDATE equipe SET lider_id = 2 WHERE id = 1;
@@ -39,10 +38,10 @@ UPDATE equipe SET lider_id = 2 WHERE id = 1;
 UPDATE equipes_funcionarios SET funcionario_id = 4 WHERE equipe_id = 1 AND funcionario_id = 2;
 INSERT INTO equipes_funcionarios VALUES (4, 1);
 
--------- TESTES RESTRIÇÃO 2 --------
+-------- TESTES RESTRIÇÃO 3 --------
 
 -- Alteração da permissão associada a uma categoria
-UPDATE categoria SET permissao_assoc = 4 WHERE nome = 'Vendas';
+UPDATE categoria SET permissao_assoc = 4 WHERE nome = 'Marketing';
 
 -- Inserção ou alteração de projeto
 INSERT INTO projeto VALUES (4, 'Administrativo', 3);
@@ -52,5 +51,5 @@ UPDATE projeto SET categoria_nome = 'Confidencial' WHERE id = 3;
 UPDATE funcionario SET nivel_permissao = 5 WHERE id = 4;
 
 -- Alteração ou remoção em equipes_funcionarios
-UPDATE equipes_funcionarios SET funcionario_id = 5 WHERE equipe_id = 2 AND funcionario_id = 2;
+UPDATE equipes_funcionarios SET funcionario_id = 5 WHERE equipe_id = 3 AND funcionario_id = 4;
 DELETE FROM equipes_funcionarios WHERE funcionario_id = 2 AND equipe_id = 2;
